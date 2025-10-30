@@ -1,0 +1,2 @@
+class DocumentDejaEmprunteException(Exception):
+    pass
