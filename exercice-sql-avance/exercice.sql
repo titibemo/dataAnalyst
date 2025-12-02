@@ -1,3 +1,5 @@
+-- pense-bête table
+
 -- =========================
 -- TABLE : users
 -- =========================
@@ -160,6 +162,7 @@ ON v_listening_details_artists(avg_seconds_listening);
 
 --#################################### exercice 2  Vues matérialisées (Boutique en ligne)
 
+-- pense-bête table
 
 -- =========================
 -- TABLE : customers
@@ -262,7 +265,7 @@ SELECT * FROM mv_orders_informations
 ORDER BY order_date ASC;
 
 SELECT * FROM mv_orders_informations
-WHERE total_order >+ 200
+WHERE total_order >= 200
 ORDER BY order_date ASC;
 
 /*
@@ -290,6 +293,7 @@ INNER JOIN customers AS c
 ON o.customer_id = c.customer_id
 INNER JOIN order_items AS oi
 ON o.order_id = oi.order_id
+WHERE o.status = 'COMPLETED'
 GROUP BY c.full_name;
 
 SELECT * FROM mv_best_customers
@@ -364,4 +368,119 @@ ORDER BY order_date ASC;
     "2024-05-02"	3	158.80
     "2024-05-03"	2	209.70
     "2024-05-04"	2	108.90
+*/
+
+
+----------------------------- BONUS
+
+-- =========================
+-- TABLE : customers
+-- =========================
+CREATE TABLE customers (
+    customer_id INTEGER PRIMARY KEY,
+    full_name   TEXT NOT NULL,
+    city        TEXT NOT NULL
+);
+
+
+-- =========================
+-- TABLE : restaurants
+-- =========================
+CREATE TABLE restaurants (
+    restaurant_id INTEGER PRIMARY KEY,
+    name          TEXT NOT NULL,
+    city          TEXT NOT NULL
+);
+
+-- =========================
+-- TABLE : couriers (Livreurs)
+-- =========================
+CREATE TABLE couriers (
+    courier_id INTEGER PRIMARY KEY,
+    full_name  TEXT NOT NULL,
+    vehicle    TEXT NOT NULL
+);
+
+
+-- =========================
+-- TABLE : orders
+-- =========================
+CREATE TABLE orders (
+    order_id      INTEGER PRIMARY KEY,
+    customer_id   INTEGER NOT NULL REFERENCES customers(customer_id),
+    restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
+    amount        NUMERIC(8,2) NOT NULL,
+    status        TEXT NOT NULL, -- 'DELIVERED', 'CANCELLED'
+    order_date    DATE NOT NULL
+);
+
+-- =========================
+-- TABLE : deliveries (assignation du coursier)
+-- =========================
+CREATE TABLE deliveries (
+    delivery_id INTEGER PRIMARY KEY,
+    order_id    INTEGER NOT NULL REFERENCES orders(order_id),
+    courier_id  INTEGER NOT NULL REFERENCES couriers(courier_id),
+    delivery_time_min INTEGER NOT NULL -- durée effective de livraison
+);
+
+
+-----# EXERCICE
+
 /*
+## 1. Statistique globale reprise sur chaque ligne
+
+L’entreprise souhaite afficher, pour chaque restaurant, une statistique **globale** qui ne dépend pas du restaurant lui-même.
+
+Élaborer une requête affichant, pour chaque restaurant, une information issue d’un calcul global portant sur toutes les commandes livrées.
+
+*/
+
+
+SELECT 
+    r.restaurant_id, 
+    r.name, 
+    COUNT(o.order_id) AS nb_orders, 
+    SUM(o.amount) AS total_amount
+FROM orders AS o
+INNER JOIN restaurants AS r
+ON o.restaurant_id = r.restaurant_id
+WHERE o.status <> 'CANCELLED'
+GROUP BY r.restaurant_id, r.name; 
+
+/* 
+## 2. Calcul par restaurant utilisant une valeur corrélée
+
+On souhaite cette fois obtenir, pour chaque restaurant, une valeur calculée uniquement avec **les commandes de ce restaurant-ci**.
+
+Élaborer une requête qui compare une statistique propre à chaque restaurant à une statistique identique mais **globale**.
+*/
+
+SELECT 
+    r.restaurant_id, 
+    r.name, 
+    COUNT(o.order_id) AS nb_orders, 
+    SUM(o.amount) AS total_amount,
+    (SELECT AVG(amount) FROM orders) AS avg_amount_all_orders
+FROM orders AS o
+INNER JOIN restaurants AS r
+ON o.restaurant_id = r.restaurant_id
+WHERE o.status <> 'CANCELLED'
+GROUP BY r.restaurant_id, r.name; 
+
+
+/*
+## 3. Extraction conditionnelle avec IN
+
+L’équipe Marketing souhaite obtenir la liste des clients ayant commandé dans un ensemble déterminé de restaurants situés à Paris.
+
+Construire une requête retournant uniquement les clients qui correspondent à ce critère.
+*/
+
+SELECT c.full_name  FROM customers AS c
+INNER JOIN orders AS o
+ON c.customer_id = o.customer_id
+INNER JOIN restaurants AS r
+ON o.restaurant_id = r.restaurant_id
+WHERE r.name = 'BurgerTop';
+
