@@ -33,7 +33,7 @@ best_selled_product = df.groupby("produit")["quantite"].sum().sort_values(ascend
 
 
 #    - Jour de la semaine avec le plus de ventes
-df["days"] = df["date"].dt.day
+#df["days"] = df["date"].dt.day
 df["day_by_week"] = df["date"].dt.dayofweek
 best_selled_day = df.groupby("day_by_week")["quantite"].sum().sort_values(ascending=False).head(1)
 
@@ -44,10 +44,18 @@ best_selled_day = df.groupby("day_by_week")["quantite"].sum().sort_values(ascend
 #    - Feuille "Par région" : Agrégation par région
 #    - Feuille "Par produit" : Agrégation par produit
 
-with pd.ExcelWriter('etl/exercices/exercice2/rapport.xlsx') as writer:
+with pd.ExcelWriter('etl/exercices/exercice2/rapport.xlsx', engine='openpyxl') as writer:
     df.to_excel(writer, sheet_name='Données', index=False)
     best_selled_product.to_excel(writer, sheet_name='Par région', index=False)
     total_sell_by_region.to_excel(writer, sheet_name='Par produit', index=False)
+
+    workbook = writer.book
+    worksheet_clean = writer.sheets['Données']
+    worksheet_region = writer.sheets['Par région']
+    worksheet_produit = writer.sheets['Par produit']
+    worksheet_clean.sheet_properties.tabColor = "0000FF"
+    worksheet_region.sheet_properties.tabColor = "FFFFFF"
+    worksheet_produit.sheet_properties.tabColor = "F00020"
 
 
 print(best_selled_product)
