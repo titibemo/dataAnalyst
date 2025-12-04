@@ -60,12 +60,52 @@ total_population = df["population"].sum()
 # 6. Trouver le pays avec la plus grande densité
 country_most_dense = df.sort_values(by="density", ascending=False).head(1).reset_index()
 
+#BONUS     country_by_language = {}
+
+
+country_by_language = {}
+
+for country in countries_europe:
+    languages = country.get('languages', {})
+    population = country.get('population', 0)
+
+    for language in languages.values():
+        print(language)
+
+        if language not in country_by_language:
+            country_by_language[language] = population
+        else:
+            country_by_language[language] = country_by_language.get(language, 0) + population
+
+
+df_language = pd.DataFrame.from_dict(country_by_language, orient='index', columns=['population'])
+df_language = df_language.reset_index()
+df_language.columns = ['language', 'population']
+
+top_3_by_language = df_language.sort_values(by="population", ascending=False).head(3).reset_index()
+
+print(top_3_by_language)
+
+
+
 # 7. Sauvegarder les résultats dans `pays_europe.xlsx`
 with pd.ExcelWriter('etl/exercices/exercice4/pays_europe.xlsx', engine='openpyxl') as writer:
     df.to_excel(writer, sheet_name='pays_europe', index=False)
     top_5_by_population.to_excel(writer, sheet_name='population_top_5', index=False)
-#
     country_most_dense.to_excel(writer, sheet_name='plays_le_plus_densee', index=False)
+    top_3_by_language.to_excel(writer, sheet_name='top_3_pays_langues_parless', index=False)
+
+# Bonus  Top par langue parlée
+# a partir des mêmes données, identifier les 3 langues les plus parlées en Europe (en termes de population totale des pays où elles sont langue officielle).
+# créer un tableau langues_europe avec : langue, nombre de pays, population totale concernée.
+
+
+# posts_par_user = {}
+# for post in all_posts:
+#     user_id = post['userId']
+#     posts_par_user[user_id] = posts_par_user.get(user_id,0) + 1
+
+# sauvegarder ce tableau dans une nouvelle feuille de pays_europe.xlsx.
 
 
 
