@@ -57,9 +57,6 @@ def main():
         all_tags = quote.select('.tags a')
         for tag in all_tags:
             tags.append(tag.get_text(strip=True, separator=", "))
-        
-        all_tags = quote.select('.tags a')
-        clean_tag = all_tags[0].get_text(strip=True, separator=", ")
         quotes_list.append({
             'text': quote.select('.text')[0].text,
             'author': quote.select('.author')[0].text,
