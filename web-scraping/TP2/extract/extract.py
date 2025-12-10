@@ -2,6 +2,7 @@ import requests
 import os
 import time
 from bs4 import BeautifulSoup
+from load.load import load_excel
 from transform.transform import transforms_data
 from dotenv import load_dotenv
 load_dotenv()
@@ -43,7 +44,7 @@ def get_link_next_pages(logger, soup=None):
         pagination = soup.select('.pager .next a')[0]['href']
         return pagination
     
-def request_page(logger, scrape_many_pages=False, nbres_pages_to_scrape=3, pagination_link=None):
+def request_page(logger, scrape_many_pages=False, nbres_pages_to_scrape=2, pagination_link=None):
     if scrape_many_pages:
         quotes_citations = []
         quotes_authors = []
@@ -52,6 +53,8 @@ def request_page(logger, scrape_many_pages=False, nbres_pages_to_scrape=3, pagin
         number_pages = 1
         while number_pages <= nbres_pages_to_scrape:
             try:
+                if number_pages == 1:
+                    pagination_link = "/page/1"
                 logger.info(f"MULTIPLE SCRAPING - APPEL DE LA PAGE: {BASE_URL}{pagination_link} - page-{number_pages}")
 
                 response = requests.get(f'{BASE_URL}{pagination_link}')
@@ -71,7 +74,8 @@ def request_page(logger, scrape_many_pages=False, nbres_pages_to_scrape=3, pagin
                 break
             finally:
                 logger.info(f" ====== MULTIPLE SCRAPING - FIN DU MULTIPLE SCRAPING ====")
-                transforms_data(quotes_citations, quotes_authors, quotes_tags)
+                df_citations, df_authors, df_tags = transforms_data(logger, quotes_citations, quotes_authors, quotes_tags)
+                load_excel(logger, df_citations, df_authors, df_tags)
     
     else:
         logger.info(f"APPEL DE LA PAGE: {BASE_URL}")
