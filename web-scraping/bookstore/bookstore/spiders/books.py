@@ -16,8 +16,8 @@ class BooksSpider(scrapy.Spider):
         for quote in response.css('section .row li'):
             item = BookItem()
             item['title'] = quote.css('.product_pod h3 a::text').get()
-            item['price'] = quote.css('.price_color::text').re_first(r'\d+\.\d{2}')
-            item['rating'] = quote.css('.product_pod p::attr(class)').get().split()[1]
+            item['price'] = quote.css('.price_color::text').re_first(r'\d+\.\d{2}') # https://docs.scrapy.org/en/latest/topics/selectors.html#using-selectors-with-regular-expressions
+            item['rating'] = quote.css('.product_pod p::attr(class)').get().split()[1] # https://docs.scrapy.org/en/latest/topics/selectors.html
             item['availability'] = quote.css('.instock.availability ::text').getall()[-1].strip()
             yield item
             
