@@ -87,6 +87,7 @@ def main():
 
     #6. **Bonus** : Telecharger l'image du livre le plus cher
     most_expensive_book_image_url = df['URL de l\'image'].loc[df['Prix'] == most_expensive_price].iloc[0]
+    print(most_expensive_book_image_url, type(most_expensive_book_image_url))
     response = requests.get(most_expensive_book_image_url)
     response.raise_for_status()
     with open('most_expensive_book.jpg', 'wb') as f:
