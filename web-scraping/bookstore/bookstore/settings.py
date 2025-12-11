@@ -85,3 +85,9 @@ DOWNLOAD_DELAY = 1
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
+
+# https://www.geeksforgeeks.org/python/scrapy-feed-exports/
+FEEDS = {
+    'book_data.csv': {'format': 'csv', 'overwrite': True,},
+    'book_data.json': {'format': 'json', 'overwrite': True, 'indent': 2},
+}
