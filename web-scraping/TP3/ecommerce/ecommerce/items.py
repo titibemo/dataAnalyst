@@ -21,7 +21,8 @@ class BookItem(scrapy.Item):
     picture = scrapy.Field()
 
 class CategoryItem(scrapy.Item):
-    category = scrapy.Field()
+    category_title = scrapy.Field()
+    category_url = scrapy.Field()
 
 class PageCategoryItem(scrapy.Item):
     titre = scrapy.Field()

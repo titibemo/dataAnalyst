@@ -85,3 +85,17 @@ DOWNLOAD_DELAY = 1
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
+
+ITEM_PIPELINES = {
+    "ecommerce.pipelines.DuplicatesPipeline" : 100,
+    "ecommerce.pipelines.PriceConversionPipeline" : 200,
+    "ecommerce.pipelines.ExcelWriterPipeline": 300,
+    "ecommerce.pipelines.JsonArchivePipeline" : 400,
+}
+DOWNLOADER_MIDDLEWARES = {
+    "ecommerce.middlewares.UserAgentMiddleware" : 500,
+}
+
+LOG_ENABLED = True
+LOG_FILE = 'log/rapport.log'   # le fichier de log
+LOG_LEVEL = 'INFO'             # niveau de log

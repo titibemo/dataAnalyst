@@ -5,54 +5,20 @@
 
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
-from itemadapter import ItemAdapter
 import json
 import os
+from datetime import datetime
+import logging
 
+from ecommerce.items import CategoryItem, BookItem
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
+from openpyxl import Workbook
 
-class EcommercePipeline:
-    def process_item(self, item, spider):
-        return item
-
-class JsonWriterPipeline:
-    """
-    Pipeline de sauvegarde des items dans un fichier JSON.
-
-    Fonctionnement :
-    - open_spider : ouverture du fichier et initialisation d'une liste tampon
-    - process_item : ajout de chaque item dans la liste
-    - close_spider : écriture de tous les items dans le fichier JSON
-
-    Ce pipeline illustre la logique présentée dans le cours :
-    sauvegarde en JSON via open_spider / close_spider.
-    """
-
-    def open_spider(self, spider):
-        # Création du dossier "outputs" si nécessaire.
-        os.makedirs("outputs", exist_ok=True)
-
-        # Ouverture du fichier en écriture, encodage UTF-8.
-        self.file_path = os.path.join("outputs", "quotes_pipelines.json")
-        self.file = open(self.file_path, "w", encoding="utf-8")
-
-        # Liste utilisée comme tampon pour accumuler les items.
-        self.items = []
-
-    def close_spider(self, spider):
-        # Écriture de la liste complète dans le fichier JSON.
-        json.dump(self.items, self.file, indent=2, ensure_ascii=False)
-        self.file.close()
-
-    def process_item(self, item, spider):
-        # Conversion de l'item (Item ou dict) en dict standard.
-        adapter = ItemAdapter(item)
-        self.items.append(adapter.asdict())
-        return item
-
+os.makedirs("log", exist_ok=True)
+logger = logging.getLogger("PIPELINE_SCRAPY")
+#logging.basicConfig(filename='log/rapport.log', encoding='utf-8', level=logging.INFO)
 
 class PriceConversionPipeline:
     """
@@ -69,6 +35,10 @@ class PriceConversionPipeline:
     """
 
     def process_item(self, item, spider):
+        logger.info("=" * 50)
+        logger.info("============= PriceConversionPipeline ACTIVATED  =============")
+        logger.info("=" * 50)
+
         adapter = ItemAdapter(item)
 
         if adapter.get("price"):
@@ -103,6 +73,10 @@ class DuplicatesPipeline:
         self.texts_seen = set()
 
     def process_item(self, item, spider):
+        logger.info("=" * 50)
+        logger.info("============= DuplicatesPipeline ACTIVATED  =============")
+        logger.info("=" * 50)
+
         adapter = ItemAdapter(item)
 
         # Le champ "text" est utilisé comme clé de déduplication.
@@ -119,4 +93,96 @@ class DuplicatesPipeline:
         # Enregistrement du texte comme déjà vu.
         self.texts_seen.add(text)
         return item
+    
+class ExcelWriterPipeline:
+    """"
+    Pipeline d'enregistrement des items dans un fichier Excel.
 
+    Ce pipeline est adapté aux Items de type "CategoryItem" et "BookItem".
+    """
+    
+
+    def open_spider(self, spider):
+        logger.info("=" * 50)
+        logger.info("============= EXCELWRITERPIPELINE ACTIVATED  =============")
+        logger.info("=" * 50)
+
+        # Dossier outputs
+        os.makedirs("outputs/excel", exist_ok=True)
+        self.file_path = os.path.join("outputs/excel", "books.xlsx")
+
+        # Nouveau fichier Excel
+        self.wb = Workbook()
+
+        # Feuille catégories
+        logger.info("=" * 50)
+        logger.info("============= EXCELWRITERPIPELINE CREATE SHEET CATEGORIES  =============")
+        logger.info("=" * 50)
+
+        self.sheet_categories = self.wb.active
+        self.sheet_categories.title = "categories"
+        self.sheet_categories.append(["category_title", "category_url"])
+
+        # Feuille livres
+        logger.info("=" * 50)
+        logger.info("============= EXCELWRITERPIPELINE CREATE SHEET BOOKS  =============")
+        logger.info("=" * 50)
+        self.sheet_books = self.wb.create_sheet("books")
+        self.sheet_books.append(["title", "price", "rating", "description", "number_review", "category"])
+
+    def close_spider(self, spider):
+        self.wb.save(self.file_path)
+
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+
+        # Si c’est une catégorie → feuille categories
+        if isinstance(item, CategoryItem):
+            self.sheet_categories.append([
+                adapter.get("category_title"),
+                adapter.get("category_url")
+            ])
+            return item
+        
+        # Si c’est un livre → feuille books
+        if isinstance(item, BookItem):
+            self.sheet_books.append([
+                adapter.get("title"),
+                adapter.get("price"),
+                adapter.get("rating"),
+                adapter.get("description"),
+                adapter.get("number_review"),
+                adapter.get("category")
+            ])
+            return item
+
+        # Tout autre item → ignoré
+        return item
+
+import os
+import json
+from itemadapter import ItemAdapter
+
+class JsonArchivePipeline:
+    """
+    Pipeline qui sauvegarde tous les items dans un fichier JSON.
+    Utile pour archivage ou backup.
+    """
+
+    def open_spider(self, spider):
+        os.makedirs("outputs/json", exist_ok=True)
+        self.file_path = os.path.join("outputs/json", f"archive_{datetime.now().strftime('%Y%m%d%H%M%S')}.json")
+
+        #self.file_path = os.path.join("outputs", "archive.json")
+        self.file = open(self.file_path, "w", encoding="utf-8")
+        self.items = []
+
+    def close_spider(self, spider):
+        # Écriture finale de tous les items dans un JSON formaté
+        json.dump(self.items, self.file, indent=2, ensure_ascii=False)
+        self.file.close()
+
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+        self.items.append(adapter.asdict())
+        return item
