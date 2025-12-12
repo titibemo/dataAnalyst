@@ -1,101 +1,59 @@
-# Scrapy settings for ecommerce project
+# Scrapy settings for the ecommerce project
 #
-# For simplicity, this file contains only settings considered important or
-# commonly used. You can find more settings consulting the documentation:
-#
-#     https://docs.scrapy.org/en/latest/topics/settings.html
-#     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+# This file contains the main configuration for the Scrapy spider.
+# Only important and commonly used settings are included.
+# Full documentation:
+# https://docs.scrapy.org/en/latest/topics/settings.html
+# https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+# https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "ecommerce"
+# ----------------------
+# Basic project settings DO NOT TOUCH !
+# ----------------------
+BOT_NAME = "ecommerce"  # Name of the Scrapy bot
 
-SPIDER_MODULES = ["ecommerce.spiders"]
-NEWSPIDER_MODULE = "ecommerce.spiders"
+SPIDER_MODULES = ["ecommerce.spiders"]  # Location of spider modules
+NEWSPIDER_MODULE = "ecommerce.spiders"  # Default module for new spiders
 
-ADDONS = {}
+ADDONS = {}  # Placeholder for additional custom settings
 
+# ----------------------
+# Crawl behavior
+# ----------------------
+ROBOTSTXT_OBEY = True  # Respect robots.txt rules
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = "ecommerce (+http://www.yourdomain.com)"
+# Control the number of concurrent requests and throttling
+CONCURRENT_REQUESTS_PER_DOMAIN = 1  # Limit requests per domain
+DOWNLOAD_DELAY = 1                   # Delay between requests (seconds)
 
-# Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+# ----------------------
+# Feed export encoding
+# ----------------------
+FEED_EXPORT_ENCODING = "utf-8"  # Ensure exported files use UTF-8 encoding
 
-# Concurrency and throttling settings
-#CONCURRENT_REQUESTS = 16
-CONCURRENT_REQUESTS_PER_DOMAIN = 1
-DOWNLOAD_DELAY = 1
-
-# Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
-
-# Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
-
-# Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
-#    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-#    "Accept-Language": "en",
-#}
-
-# Enable or disable spider middlewares
-# See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
-#    "ecommerce.middlewares.EcommerceSpiderMiddleware": 543,
-#}
-
-# Enable or disable downloader middlewares
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "ecommerce.middlewares.EcommerceDownloaderMiddleware": 543,
-#}
-
-# Enable or disable extensions
-# See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
-#}
-
-# Configure item pipelines
-# See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    "ecommerce.pipelines.EcommercePipeline": 300,
-#}
-
-# Enable and configure the AutoThrottle extension (disabled by default)
-# See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-#AUTOTHROTTLE_ENABLED = True
-# The initial download delay
-#AUTOTHROTTLE_START_DELAY = 5
-# The maximum download delay to be set in case of high latencies
-#AUTOTHROTTLE_MAX_DELAY = 60
-# The average number of requests Scrapy should be sending in parallel to
-# each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
-# Enable showing throttling stats for every response received:
-#AUTOTHROTTLE_DEBUG = False
-
-# Enable and configure HTTP caching (disabled by default)
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-#HTTPCACHE_ENABLED = True
-#HTTPCACHE_EXPIRATION_SECS = 0
-#HTTPCACHE_DIR = "httpcache"
-#HTTPCACHE_IGNORE_HTTP_CODES = []
-#HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
-
-# Set settings whose default value is deprecated to a future-proof value
-FEED_EXPORT_ENCODING = "utf-8"
-
+# ----------------------
+# Item pipelines
+# ----------------------
+# Defines the order in which pipelines are applied (lower values processed first)
 ITEM_PIPELINES = {
-    "ecommerce.pipelines.DuplicatesPipeline" : 100,
-    "ecommerce.pipelines.PriceConversionPipeline" : 200,
-    "ecommerce.pipelines.ExcelWriterPipeline": 300,
-    "ecommerce.pipelines.JsonArchivePipeline" : 400,
-}
-DOWNLOADER_MIDDLEWARES = {
-    "ecommerce.middlewares.UserAgentMiddleware" : 500,
+    "ecommerce.pipelines.DuplicatesPipeline": 100,         # Remove duplicate items
+    "ecommerce.pipelines.PriceConversionPipeline": 200,    # Convert price strings to float
+    "ecommerce.pipelines.ExcelWriterPipeline": 300,        # Save items to Excel
+    "ecommerce.pipelines.JsonArchivePipeline": 400,        # Archive items in JSON
 }
 
-LOG_ENABLED = True
-LOG_FILE = 'log/rapport.log'   # le fichier de log
-LOG_LEVEL = 'INFO'             # niveau de log
+# ----------------------
+# Downloader middlewares
+# ----------------------
+# Custom middlewares for modifying requests (e.g., User-Agent rotation)
+DOWNLOADER_MIDDLEWARES = {
+    "ecommerce.middlewares.UserAgentMiddleware": 500,
+}
+
+# ----------------------
+# Logging settings
+# ----------------------
+LOG_ENABLED = True                  # Enable logging
+LOG_FILE = 'log/rapport.log'        # Log file path
+LOG_LEVEL = 'INFO'                  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+

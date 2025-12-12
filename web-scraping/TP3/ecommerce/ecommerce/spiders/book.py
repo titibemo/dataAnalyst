@@ -1,5 +1,4 @@
 import scrapy
-import scrapy
 from ecommerce.items import BookItem, CategoryItem
 
 class BookSpider(scrapy.Spider):
@@ -12,14 +11,14 @@ class BookSpider(scrapy.Spider):
 
     def parse(self, response):
 
-        # 1. Récupérer les catégories
+        # 1. Retrieve the categories
         for category in response.css('div.side_categories ul li ul li a')[:2]:
             url = response.urljoin(category.attrib['href'])
             yield response.follow(url, callback=self.parse_category)
 
     def parse_category(self, response):
 
-        # Titre de la catégorie
+        # Category title
         title = response.css('div.page-header h1::text').get()
 
         yield CategoryItem(
@@ -27,10 +26,10 @@ class BookSpider(scrapy.Spider):
             category_url=response.url
         )
 
-        # Suivi des livres de la catégorie
+        # Follow the books in the category
         for book in response.css('h3 a')[:2]:
             url = response.urljoin(book.attrib['href'])
-            # On passe la catégorie dans les meta (utile pour l'item final)
+            # Pass the category in the meta (useful for the final item)
             yield response.follow(url, callback=self.parse_book_category, meta={'category': title})
 
         # Pagination

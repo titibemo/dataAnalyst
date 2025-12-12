@@ -3,8 +3,7 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
-
-# useful for handling different item types with a single interface
+# Useful for handling different item types with a single interface
 import json
 import os
 from datetime import datetime
@@ -18,20 +17,19 @@ from openpyxl import Workbook
 
 os.makedirs("log", exist_ok=True)
 logger = logging.getLogger("PIPELINE_SCRAPY")
-#logging.basicConfig(filename='log/rapport.log', encoding='utf-8', level=logging.INFO)
+# logging.basicConfig(filename='log/rapport.log', encoding='utf-8', level=logging.INFO)
 
 class PriceConversionPipeline:
     """
-    Pipeline de conversion des prix en float.
+    Pipeline to convert prices to float.
 
-    Ce pipeline est principalement destiné aux Items de type "BookItem"
-    (extraction depuis un site de livres avec un champ 'price').
+    This pipeline is mainly intended for "BookItem" type items
+    (scraped from a book site with a 'price' field).
 
-    Exemple de transformation :
+    Example transformation:
     - "£51.77" -> 51.77 (float)
 
-    Si le champ 'price' n'existe pas ou n'est pas exploitable,
-    l'item est renvoyé tel quel.
+    If the 'price' field is missing or invalid, the item is returned as-is.
     """
 
     def process_item(self, item, spider):
@@ -44,13 +42,13 @@ class PriceConversionPipeline:
         if adapter.get("price"):
             price_text = str(adapter["price"]).strip()
 
-            # Suppression de tous les caractères non numériques (sauf le point).
+            # Remove all non-numeric characters (except the dot)
             cleaned = "".join(ch for ch in price_text if ch.isdigit() or ch == ".")
 
             try:
                 adapter["price"] = float(cleaned)
             except ValueError:
-                # En cas d'échec de conversion, le prix est laissé tel quel.
+                # If conversion fails, leave the price as-is
                 adapter["price"] = adapter["price"]
 
         return item
@@ -58,18 +56,17 @@ class PriceConversionPipeline:
 
 class DuplicatesPipeline:
     """
-    Pipeline de suppression des doublons.
+    Pipeline to remove duplicate items.
 
-    Ce pipeline est adapté aux citations :
-    - Un ensemble "ids_seen" conserve les textes déjà rencontrés.
-    - Si un texte est déjà présent, l'item est ignoré (DropItem).
+    This pipeline is suitable for quotes:
+    - A set "texts_seen" keeps track of texts already encountered.
+    - If a text is already present, the item is ignored (DropItem).
 
-    Il illustre le comportement décrit dans le cours :
-    détection et filtrage des doublons.
+    It illustrates duplicate detection and filtering.
     """
 
     def __init__(self):
-        # Ensemble des textes déjà vus.
+        # Set of texts already seen
         self.texts_seen = set()
 
     def process_item(self, item, spider):
@@ -79,42 +76,42 @@ class DuplicatesPipeline:
 
         adapter = ItemAdapter(item)
 
-        # Le champ "text" est utilisé comme clé de déduplication.
+        # The "text" field is used as the deduplication key
         text = adapter.get("text")
 
         if text is None:
-            # Si aucun texte n'est disponible, l'item est conservé.
+            # If no text is available, keep the item
             return item
 
         if text in self.texts_seen:
-            # L'item est ignoré car déjà rencontré.
-            raise DropItem(f"Doublon détecté pour la citation : {text!r}")
+            # Ignore the item because it has already been seen
+            raise DropItem(f"Duplicate detected for the quote: {text!r}")
 
-        # Enregistrement du texte comme déjà vu.
+        # Record the text as already seen
         self.texts_seen.add(text)
         return item
-    
-class ExcelWriterPipeline:
-    """"
-    Pipeline d'enregistrement des items dans un fichier Excel.
 
-    Ce pipeline est adapté aux Items de type "CategoryItem" et "BookItem".
+
+class ExcelWriterPipeline:
     """
-    
+    Pipeline to save items into an Excel file.
+
+    This pipeline is suitable for "CategoryItem" and "BookItem" types.
+    """
 
     def open_spider(self, spider):
         logger.info("=" * 50)
         logger.info("============= EXCELWRITERPIPELINE ACTIVATED  =============")
         logger.info("=" * 50)
 
-        # Dossier outputs
+        # Create outputs folder
         os.makedirs("outputs/excel", exist_ok=True)
         self.file_path = os.path.join("outputs/excel", "books.xlsx")
 
-        # Nouveau fichier Excel
+        # Create a new Excel workbook
         self.wb = Workbook()
 
-        # Feuille catégories
+        # Categories sheet
         logger.info("=" * 50)
         logger.info("============= EXCELWRITERPIPELINE CREATE SHEET CATEGORIES  =============")
         logger.info("=" * 50)
@@ -123,7 +120,7 @@ class ExcelWriterPipeline:
         self.sheet_categories.title = "categories"
         self.sheet_categories.append(["category_title", "category_url"])
 
-        # Feuille livres
+        # Books sheet
         logger.info("=" * 50)
         logger.info("============= EXCELWRITERPIPELINE CREATE SHEET BOOKS  =============")
         logger.info("=" * 50)
@@ -136,15 +133,15 @@ class ExcelWriterPipeline:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
 
-        # Si c’est une catégorie → feuille categories
+        # If it's a category → write to categories sheet
         if isinstance(item, CategoryItem):
             self.sheet_categories.append([
                 adapter.get("category_title"),
                 adapter.get("category_url")
             ])
             return item
-        
-        # Si c’est un livre → feuille books
+
+        # If it's a book → write to books sheet
         if isinstance(item, BookItem):
             self.sheet_books.append([
                 adapter.get("title"),
@@ -156,29 +153,24 @@ class ExcelWriterPipeline:
             ])
             return item
 
-        # Tout autre item → ignoré
+        # Any other item → ignore
         return item
 
-import os
-import json
-from itemadapter import ItemAdapter
 
 class JsonArchivePipeline:
     """
-    Pipeline qui sauvegarde tous les items dans un fichier JSON.
-    Utile pour archivage ou backup.
+    Pipeline that saves all items into a JSON file.
+    Useful for archiving or backup.
     """
 
     def open_spider(self, spider):
         os.makedirs("outputs/json", exist_ok=True)
         self.file_path = os.path.join("outputs/json", f"archive_{datetime.now().strftime('%Y%m%d%H%M%S')}.json")
-
-        #self.file_path = os.path.join("outputs", "archive.json")
         self.file = open(self.file_path, "w", encoding="utf-8")
         self.items = []
 
     def close_spider(self, spider):
-        # Écriture finale de tous les items dans un JSON formaté
+        # Final write of all items into a formatted JSON file
         json.dump(self.items, self.file, indent=2, ensure_ascii=False)
         self.file.close()
 
